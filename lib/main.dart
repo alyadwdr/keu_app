@@ -7,14 +7,13 @@ import 'screens/home_screen.dart';
 import 'screens/transactions_screen.dart';
 import 'screens/summary_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'screens/splash_screen.dart';
 import 'dart:ui';
+import 'router.dart';
 
 void main() async {
   // Memastikan binding Flutter terinisialisasi
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('id_ID', null);
-  runApp(const MyApp());
 
   // Set orientasi hanya portrait
   SystemChrome.setPreferredOrientations([
@@ -42,7 +41,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (context) => TransactionProvider(),
-      child: MaterialApp(
+      child: MaterialApp.router(
         title: 'Finance Tracker',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
@@ -58,7 +57,8 @@ class MyApp extends StatelessWidget {
           ),
           useMaterial3: true,
         ),
-        home: const SplashScreen(),
+
+        routerConfig: router,
       ),
     );
   }
@@ -90,21 +90,22 @@ class _MainScreenState extends State<MainScreen> {
         index: _currentIndex,
         children: _screens,
       ),
+
       // Bottom Navigation Bar
       bottomNavigationBar: Container(
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
         height: 70,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha:0.85),
+          color: Colors.white.withValues(alpha: 0.85),
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha:0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 25,
               offset: const Offset(0, 8),
             ),
             BoxShadow(
-              color: Colors.black.withValues(alpha:0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),

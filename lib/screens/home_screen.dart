@@ -14,7 +14,6 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<TransactionProvider>(context);
-    final size = MediaQuery.sizeOf(context);
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),

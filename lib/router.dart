@@ -15,13 +15,13 @@ final GoRouter router = GoRouter(
       builder: (context, state) => const SplashScreen(),
     ),
 
-    // Main screen 
+    // Main screen
     GoRoute(
       path: '/main',
       builder: (context, state) => const MainScreen(),
     ),
 
-    // Halaman individual 
+    // Halaman individual
     GoRoute(
       path: '/home',
       builder: (context, state) => const HomeScreen(),
