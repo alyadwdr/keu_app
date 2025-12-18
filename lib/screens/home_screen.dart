@@ -8,8 +8,70 @@ import '../widgets/add_transaction_sheet.dart';
 import '../widgets/sparkline_chart.dart';
 
 /// Halaman Dashboard - menampilkan ringkasan dan transaksi terbaru
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => HomeScreenState();
+}
+
+class HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _balanceAnimation;
+  late Animation<double> _incomeAnimation;
+  late Animation<double> _expenseAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 2000),
+      vsync: this,
+    );
+
+    _balanceAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      ),
+    );
+
+    _incomeAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
+      ),
+    );
+
+    _expenseAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
+      ),
+    );
+
+    // Start animation saat pertama kali dibuka
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _animationController.forward();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  // Method public untuk restart animasi dari parent
+  void restartAnimation() {
+    if (mounted) {
+      _animationController.reset();
+      _animationController.forward();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +80,6 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       body: Container(
-        // Background
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -33,7 +94,6 @@ class HomeScreen extends StatelessWidget {
           child: CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              // Header dengan greeting
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
@@ -44,7 +104,7 @@ class HomeScreen extends StatelessWidget {
                         'Welcome! 👋',
                         style: TextStyle(
                           fontSize: 28,
-                          fontWeight: FontWeight.w800, // More bold
+                          fontWeight: FontWeight.w800,
                           color: Colors.black87,
                           letterSpacing: -0.5,
                         ),
@@ -55,7 +115,7 @@ class HomeScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w400,
-                          color: Colors.black.withValues(alpha:0.5),
+                          color: Colors.black.withValues(alpha: 0.5),
                         ),
                       ),
                     ],
@@ -63,59 +123,73 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
 
-              // Card Saldo Utama (Glass Effect)
+              // Card Saldo Utama dengan Animasi
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: GlassCard(
                     child: Container(
                       padding: const EdgeInsets.all(24),
-                      child:                       Column(
+                      child: Column(
                         children: [
                           Text(
                             'Total Balance',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
-                              color: Colors.black.withValues(alpha:0.6),
+                              color: Colors.black.withValues(alpha: 0.6),
                             ),
                           ),
                           const SizedBox(height: 8),
-                          Text(
-                            NumberFormat.currency(
-                              locale: 'id_ID',
-                              symbol: 'Rp ',
-                              decimalDigits: 0,
-                            ).format(provider.totalBalance),
-                            style: const TextStyle(
-                              fontSize: 36,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.black87,
-                              letterSpacing: -1,
-                            ),
+                          AnimatedBuilder(
+                            animation: _balanceAnimation,
+                            builder: (context, child) {
+                              return Text(
+                                NumberFormat.currency(
+                                  locale: 'id_ID',
+                                  symbol: 'Rp ',
+                                  decimalDigits: 0,
+                                ).format(provider.totalBalance * _balanceAnimation.value),
+                                style: const TextStyle(
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.black87,
+                                  letterSpacing: -1,
+                                ),
+                              );
+                            },
                           ),
                           const SizedBox(height: 24),
                           
-                          // Mini cards untuk pemasukan dan pengeluaran hari ini
                           Row(
                             children: [
                               Expanded(
-                                child: _buildMiniCard(
-                                  icon: Icons.arrow_downward_rounded,
-                                  label: 'Income',
-                                  amount: provider.todayIncome,
-                                  color: const Color(0xFFD8F2E0),
-                                  iconColor: const Color(0xFF4CAF50),
+                                child: AnimatedBuilder(
+                                  animation: _incomeAnimation,
+                                  builder: (context, child) {
+                                    return _buildMiniCard(
+                                      icon: Icons.arrow_downward_rounded,
+                                      label: 'Income',
+                                      amount: provider.todayIncome * _incomeAnimation.value,
+                                      color: const Color(0xFFD8F2E0),
+                                      iconColor: const Color(0xFF4CAF50),
+                                    );
+                                  },
                                 ),
                               ),
                               const SizedBox(width: 16),
                               Expanded(
-                                child: _buildMiniCard(
-                                  icon: Icons.arrow_upward_rounded,
-                                  label: 'Expense',
-                                  amount: provider.todayExpense,
-                                  color: const Color(0xFFF8E8E9),
-                                  iconColor: const Color(0xFFE57373),
+                                child: AnimatedBuilder(
+                                  animation: _expenseAnimation,
+                                  builder: (context, child) {
+                                    return _buildMiniCard(
+                                      icon: Icons.arrow_upward_rounded,
+                                      label: 'Expense',
+                                      amount: provider.todayExpense * _expenseAnimation.value,
+                                      color: const Color(0xFFF8E8E9),
+                                      iconColor: const Color(0xFFE57373),
+                                    );
+                                  },
                                 ),
                               ),
                             ],
@@ -127,7 +201,7 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
 
-              // Grafik Mini (Sparkline)
+              // Grafik Mini dengan Animasi
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
@@ -146,9 +220,15 @@ class HomeScreen extends StatelessWidget {
                       GlassCard(
                         child: Padding(
                           padding: const EdgeInsets.all(20),
-                          child: SparklineChart(
-                            incomeData: provider.getWeeklyIncomeData(),
-                            expenseData: provider.getWeeklyExpenseData(),
+                          child: AnimatedBuilder(
+                            animation: _animationController,
+                            builder: (context, child) {
+                              return SparklineChart(
+                                incomeData: provider.getWeeklyIncomeData(),
+                                expenseData: provider.getWeeklyExpenseData(),
+                                animationValue: _animationController.value,
+                              );
+                            },
                           ),
                         ),
                       ),
@@ -157,7 +237,6 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
 
-              // Transaksi Terbaru
               const SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(24, 8, 24, 16),
@@ -177,7 +256,6 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
 
-              // List Transaksi Terbaru (5 item)
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 120),
                 sliver: SliverList(
@@ -199,7 +277,6 @@ class HomeScreen extends StatelessWidget {
         ),
       ),
 
-      // Floating Action Button untuk tambah transaksi
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 100),
         child: Container(
@@ -207,7 +284,7 @@ class HomeScreen extends StatelessWidget {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFF8E8E9).withValues(alpha:0.8),
+                color: const Color(0xFFF8E8E9).withValues(alpha: 0.8),
                 blurRadius: 25,
                 offset: const Offset(0, 10),
               ),
@@ -235,7 +312,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  /// Widget untuk mini card pemasukan/pengeluaran
   Widget _buildMiniCard({
     required IconData icon,
     required String label,
@@ -246,10 +322,10 @@ class HomeScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withValues(alpha:0.3),
+        color: color.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.white.withValues(alpha:0.5),
+          color: Colors.white.withValues(alpha: 0.5),
           width: 1,
         ),
       ),
@@ -259,7 +335,7 @@ class HomeScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: iconColor.withValues(alpha:0.15),
+              color: iconColor.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
@@ -274,7 +350,7 @@ class HomeScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: Colors.black.withValues(alpha:0.6),
+              color: Colors.black.withValues(alpha: 0.6),
             ),
           ),
           const SizedBox(height: 4),
@@ -295,13 +371,11 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  /// Widget untuk card transaksi
   Widget _buildTransactionCard(Transaction tx, BuildContext context) {
     final isIncome = tx.type == TransactionType.income;
     
     return GestureDetector(
       onTap: () {
-        // Open edit sheet
         showModalBottomSheet(
           context: context,
           isScrollControlled: true,
@@ -314,13 +388,12 @@ class HomeScreen extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // Icon kategori
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: (isIncome 
                       ? const Color(0xFFD8F2E0) 
-                      : const Color(0xFFF8E8E9)).withValues(alpha:0.5),
+                      : const Color(0xFFF8E8E9)).withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(15),
                 ),
                 child: Text(
@@ -330,7 +403,6 @@ class HomeScreen extends StatelessWidget {
               ),
               const SizedBox(width: 16),
               
-              // Info transaksi
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -349,14 +421,13 @@ class HomeScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w400,
-                        color: Colors.black.withValues(alpha:0.5),
+                        color: Colors.black.withValues(alpha: 0.5),
                       ),
                     ),
                   ],
                 ),
               ),
               
-              // Nominal dan tanggal
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -380,7 +451,7 @@ class HomeScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
-                      color: Colors.black.withValues(alpha:0.5),
+                      color: Colors.black.withValues(alpha: 0.5),
                     ),
                   ),
                 ],

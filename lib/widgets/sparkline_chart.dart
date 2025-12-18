@@ -6,11 +6,13 @@ import 'package:fl_chart/fl_chart.dart';
 class SparklineChart extends StatelessWidget {
   final List<double> incomeData;
   final List<double> expenseData;
+  final double animationValue;
 
   const SparklineChart({
     super.key,
     required this.incomeData,
     required this.expenseData,
+    this.animationValue = 1.0,
   });
 
   @override
@@ -22,7 +24,7 @@ class SparklineChart extends StatelessWidget {
           'No data available',
           style: TextStyle(
             fontSize: 14,
-            color: Colors.black.withValues(alpha:0.4),
+            color: Colors.black.withValues(alpha: 0.4),
           ),
         ),
       );
@@ -30,7 +32,6 @@ class SparklineChart extends StatelessWidget {
 
     return Column(
       children: [
-        // Legend
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -40,28 +41,24 @@ class SparklineChart extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
-        // Chart
         SizedBox(
           height: 120,
           child: LineChart(
             LineChartData(
-              // Grid settings
               gridData: FlGridData(
                 show: true,
                 drawVerticalLine: false,
                 horizontalInterval: _getMaxValue() / 4,
                 getDrawingHorizontalLine: (value) {
                   return FlLine(
-                    color: Colors.black.withValues(alpha:0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     strokeWidth: 1,
                   );
                 },
               ),
               
-              // Border settings
               borderData: FlBorderData(show: false),
               
-              // Title settings
               titlesData: FlTitlesData(
                 leftTitles: const AxisTitles(
                   sideTitles: SideTitles(showTitles: false),
@@ -89,7 +86,7 @@ class SparklineChart extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
-                              color: Colors.black.withValues(alpha:0.5),
+                              color: Colors.black.withValues(alpha: 0.5),
                             ),
                           ),
                         );
@@ -100,7 +97,6 @@ class SparklineChart extends StatelessWidget {
                 ),
               ),
               
-              // Touch settings
               lineTouchData: LineTouchData(
                 enabled: true,
                 touchTooltipData: LineTouchTooltipData(
@@ -125,16 +121,13 @@ class SparklineChart extends StatelessWidget {
                 ),
               ),
 
-              
-              // Min/Max values
               minY: 0,
               maxY: _getMaxValue() * 1.2,
               
-              // Line data - Income (Green) and Expense (Red)
               lineBarsData: [
-                // Income Line (Green)
+                // Income Line dengan animasi
                 LineChartBarData(
-                  spots: _generateSpots(incomeData),
+                  spots: _generateAnimatedSpots(incomeData),
                   isCurved: true,
                   curveSmoothness: 0.4,
                   color: const Color(0xFF4CAF50),
@@ -157,15 +150,15 @@ class SparklineChart extends StatelessWidget {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        const Color(0xFF4CAF50).withValues(alpha:0.2),
-                        const Color(0xFF4CAF50).withValues(alpha:0.02),
+                        const Color(0xFF4CAF50).withValues(alpha: 0.2),
+                        const Color(0xFF4CAF50).withValues(alpha: 0.02),
                       ],
                     ),
                   ),
                 ),
-                // Expense Line (Red)
+                // Expense Line dengan animasi
                 LineChartBarData(
-                  spots: _generateSpots(expenseData),
+                  spots: _generateAnimatedSpots(expenseData),
                   isCurved: true,
                   curveSmoothness: 0.4,
                   color: const Color(0xFFE57373),
@@ -188,8 +181,8 @@ class SparklineChart extends StatelessWidget {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        const Color(0xFFE57373).withValues(alpha:0.2),
-                        const Color(0xFFE57373).withValues(alpha:0.02),
+                        const Color(0xFFE57373).withValues(alpha: 0.2),
+                        const Color(0xFFE57373).withValues(alpha: 0.02),
                       ],
                     ),
                   ),
@@ -202,7 +195,6 @@ class SparklineChart extends StatelessWidget {
     );
   }
 
-  /// Build legend item
   Widget _buildLegend(String label, Color color) {
     return Row(
       children: [
@@ -220,26 +212,25 @@ class SparklineChart extends StatelessWidget {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: Colors.black.withValues(alpha:0.7),
+            color: Colors.black.withValues(alpha: 0.7),
           ),
         ),
       ],
     );
   }
 
-  /// Generate spots untuk chart
-  List<FlSpot> _generateSpots(List<double> data) {
+  /// Generate spots dengan animasi grow effect
+  List<FlSpot> _generateAnimatedSpots(List<double> data) {
     return List.generate(
       data.length,
-      (index) => FlSpot(index.toDouble(), data[index]),
+      (index) => FlSpot(index.toDouble(), data[index] * animationValue),
     );
   }
 
-  /// Mendapatkan nilai maksimum dari kedua data
   double _getMaxValue() {
     final incomeMax = incomeData.isEmpty ? 0.0 : incomeData.reduce((a, b) => a > b ? a : b);
     final expenseMax = expenseData.isEmpty ? 0.0 : expenseData.reduce((a, b) => a > b ? a : b);
     final max = incomeMax > expenseMax ? incomeMax : expenseMax;
-    return max == 0 ? 100000 : max; // Minimum scale
+    return max == 0 ? 100000 : max;
   }
 }

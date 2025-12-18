@@ -11,17 +11,14 @@ import 'dart:ui';
 import 'router.dart';
 
 void main() async {
-  // Memastikan binding Flutter terinisialisasi
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('id_ID', null);
 
-  // Set orientasi hanya portrait
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-  // Set status bar style
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -74,24 +71,39 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+  
+  // Keys untuk mengontrol state setiap screen
+  final GlobalKey<HomeScreenState> _homeKey = GlobalKey<HomeScreenState>();
+  final GlobalKey<SummaryScreenState> _summaryKey = GlobalKey<SummaryScreenState>();
 
-  // List halaman utama
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const TransactionsScreen(),
-    const SummaryScreen(),
-  ];
+  void _onTabTapped(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+
+    // Trigger animasi saat tab dibuka
+    if (index == 0) {
+      // Home screen
+      _homeKey.currentState?.restartAnimation();
+    } else if (index == 2) {
+      // Summary screen
+      _summaryKey.currentState?.restartAnimation();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true, // Floating navigation bar
+      extendBody: true,
       body: IndexedStack(
         index: _currentIndex,
-        children: _screens,
+        children: [
+          HomeScreen(key: _homeKey),
+          const TransactionsScreen(),
+          SummaryScreen(key: _summaryKey),
+        ],
       ),
 
-      // Bottom Navigation Bar
       bottomNavigationBar: Container(
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
         height: 70,
@@ -117,11 +129,7 @@ class _MainScreenState extends State<MainScreen> {
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: BottomNavigationBar(
               currentIndex: _currentIndex,
-              onTap: (index) {
-                setState(() {
-                  _currentIndex = index;
-                });
-              },
+              onTap: _onTabTapped,
               backgroundColor: Colors.transparent,
               elevation: 0,
               selectedItemColor: const Color(0xFFF28B82),
