@@ -1,14 +1,15 @@
-/// Model untuk menyimpan data transaksi keuangan
-class Transaction {
-  final String id;
-  final String title; // Nama transaksi
-  final double amount; // Nominal
-  final TransactionType type; // Pemasukan atau Pengeluaran
-  final TransactionCategory category; // Kategori
-  final DateTime date; // Tanggal transaksi
-  final String? note; // Catatan opsional
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-  Transaction({
+class TransactionModel {
+  final String id;
+  final String title;
+  final double amount;
+  final TransactionType type;
+  final TransactionCategory category;
+  final DateTime date;
+  final String? note;
+
+  TransactionModel({
     required this.id,
     required this.title,
     required this.amount,
@@ -18,8 +19,7 @@ class Transaction {
     this.note,
   });
 
-  /// Copy with method untuk memudahkan update
-  Transaction copyWith({
+  TransactionModel copyWith({
     String? id,
     String? title,
     double? amount,
@@ -28,7 +28,7 @@ class Transaction {
     DateTime? date,
     String? note,
   }) {
-    return Transaction(
+    return TransactionModel(
       id: id ?? this.id,
       title: title ?? this.title,
       amount: amount ?? this.amount,
@@ -38,15 +38,45 @@ class Transaction {
       note: note ?? this.note,
     );
   }
+
+  // Convert to Firestore
+  Map<String, dynamic> toFirestore() {
+    return {
+      'title': title,
+      'amount': amount,
+      'type': type.name,
+      'category': category.name,
+      'date': Timestamp.fromDate(date),
+      'note': note,
+    };
+  }
+
+  // Convert from Firestore
+  factory TransactionModel.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return TransactionModel(
+      id: doc.id,
+      title: data['title'] ?? '',
+      amount: (data['amount'] ?? 0).toDouble(),
+      type: TransactionType.values.firstWhere(
+        (e) => e.name == data['type'],
+        orElse: () => TransactionType.expense,
+      ),
+      category: TransactionCategory.values.firstWhere(
+        (e) => e.name == data['category'],
+        orElse: () => TransactionCategory.others,
+      ),
+      date: (data['date'] as Timestamp).toDate(),
+      note: data['note'],
+    );
+  }
 }
 
-/// Enum untuk tipe transaksi
 enum TransactionType {
-  income, // Pemasukan
-  expense, // Pengeluaran
+  income,
+  expense,
 }
 
-/// Enum untuk kategori transaksi
 enum TransactionCategory {
   food,
   transport,
@@ -58,7 +88,6 @@ enum TransactionCategory {
   others,
 }
 
-/// Extension untuk mendapatkan label kategori
 extension TransactionCategoryExtension on TransactionCategory {
   String get label {
     switch (this) {

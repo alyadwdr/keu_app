@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'providers/transaction_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/transactions_screen.dart';
@@ -12,6 +13,10 @@ import 'router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Firebase (Android only)
+  await Firebase.initializeApp();
+  
   await initializeDateFormatting('id_ID', null);
 
   SystemChrome.setPreferredOrientations([
@@ -54,14 +59,12 @@ class MyApp extends StatelessWidget {
           ),
           useMaterial3: true,
         ),
-
         routerConfig: router,
       ),
     );
   }
 }
 
-/// Screen utama dengan BottomNavigationBar
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -72,7 +75,6 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
   
-  // Keys untuk mengontrol state setiap screen
   final GlobalKey<HomeScreenState> _homeKey = GlobalKey<HomeScreenState>();
   final GlobalKey<SummaryScreenState> _summaryKey = GlobalKey<SummaryScreenState>();
 
@@ -81,12 +83,9 @@ class _MainScreenState extends State<MainScreen> {
       _currentIndex = index;
     });
 
-    // Trigger animasi saat tab dibuka
     if (index == 0) {
-      // Home screen
       _homeKey.currentState?.restartAnimation();
     } else if (index == 2) {
-      // Summary screen
       _summaryKey.currentState?.restartAnimation();
     }
   }
@@ -103,7 +102,6 @@ class _MainScreenState extends State<MainScreen> {
           SummaryScreen(key: _summaryKey),
         ],
       ),
-
       bottomNavigationBar: Container(
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
         height: 70,

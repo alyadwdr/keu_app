@@ -371,7 +371,7 @@ class HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMi
     );
   }
 
-  Widget _buildTransactionCard(Transaction tx, BuildContext context) {
+  Widget _buildTransactionCard(TransactionModel tx, BuildContext context) {
     final isIncome = tx.type == TransactionType.income;
     
     return GestureDetector(

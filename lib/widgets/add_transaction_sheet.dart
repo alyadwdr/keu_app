@@ -6,9 +6,8 @@ import 'package:intl/intl.dart';
 import '../providers/transaction_provider.dart';
 import '../models/transaction.dart';
 
-/// Bottom Sheet untuk menambah/edit transaksi baru - REVISED
 class AddTransactionSheet extends StatefulWidget {
-  final Transaction? existingTransaction; // Edit mode
+  final TransactionModel? existingTransaction;
 
   const AddTransactionSheet({super.key, this.existingTransaction});
 
@@ -28,7 +27,6 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
   @override
   void initState() {
     super.initState();
-    // If editing existing transaction, populate fields
     if (widget.existingTransaction != null) {
       final tx = widget.existingTransaction!;
       _titleController.text = tx.title;
@@ -51,8 +49,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
       final provider = Provider.of<TransactionProvider>(context, listen: false);
       
       if (widget.existingTransaction != null) {
-        // Update existing transaction
-        final updatedTransaction = Transaction(
+        final updatedTransaction = TransactionModel(
           id: widget.existingTransaction!.id,
           title: _titleController.text,
           amount: double.parse(_amountController.text),
@@ -73,8 +70,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
           ),
         );
       } else {
-        // Add new transaction
-        final transaction = Transaction(
+        final transaction = TransactionModel(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           title: _titleController.text,
           amount: double.parse(_amountController.text),
@@ -100,7 +96,6 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
     }
   }
 
-  /// Show date picker
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -153,7 +148,6 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Handle bar
                   Center(
                     child: Container(
                       width: 40,
@@ -166,7 +160,6 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Title
                   Text(
                     widget.existingTransaction != null ? 'Edit Transaction' : 'Add Transaction',
                     style: const TextStyle(
@@ -177,7 +170,6 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Type Selector
                   Row(
                     children: [
                       Expanded(
@@ -199,7 +191,6 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Title Input
                   Text(
                     'Transaction Name',
                     style: TextStyle(
@@ -233,7 +224,6 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Amount Input
                   Text(
                     'Amount',
                     style: TextStyle(
@@ -275,7 +265,6 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Date Picker
                   Text(
                     'Date',
                     style: TextStyle(
@@ -315,7 +304,6 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Category Selector
                   Text(
                     'Category',
                     style: TextStyle(
@@ -381,7 +369,6 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Submit Button
                   Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
@@ -423,7 +410,6 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
     );
   }
 
-  /// Widget untuk button tipe transaksi
   Widget _buildTypeButton({
     required String label,
     required TransactionType type,

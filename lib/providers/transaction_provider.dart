@@ -1,135 +1,75 @@
 import 'package:flutter/foundation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/transaction.dart';
 
-/// Provider untuk mengelola state transaksi menggunakan ChangeNotifier
 class TransactionProvider extends ChangeNotifier {
-  // List untuk menyimpan semua transaksi (in-memory)
-  final List<Transaction> _transactions = [];
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  List<TransactionModel> _transactions = [];
+  bool _isLoading = false;
 
-  // Getter untuk mendapatkan semua transaksi
-  List<Transaction> get transactions => List.unmodifiable(_transactions);
+  List<TransactionModel> get transactions => List.unmodifiable(_transactions);
+  bool get isLoading => _isLoading;
 
-  /// Konstruktor dengan data dummy untuk testing
   TransactionProvider() {
-    _loadDummyData();
+    _loadTransactions();
   }
 
-  /// Load data dummy untuk melihat tampilan UI
-  void _loadDummyData() {
-    final now = DateTime.now();
-    _transactions.addAll([
-      Transaction(
-        id: '1',
-        title: 'Gaji Bulanan',
-        amount: 8000000,
-        type: TransactionType.income,
-        category: TransactionCategory.salary,
-        date: DateTime(now.year, now.month, 1),
-      ),
-      Transaction(
-        id: '2',
-        title: 'Makan Siang',
-        amount: 45000,
-        type: TransactionType.expense,
-        category: TransactionCategory.food,
-        date: now.subtract(const Duration(hours: 2)),
-      ),
-      Transaction(
-        id: '3',
-        title: 'Grab ke Kantor',
-        amount: 25000,
-        type: TransactionType.expense,
-        category: TransactionCategory.transport,
-        date: now.subtract(const Duration(days: 1)),
-      ),
-      Transaction(
-        id: '4',
-        title: 'Belanja Bulanan',
-        amount: 500000,
-        type: TransactionType.expense,
-        category: TransactionCategory.shopping,
-        date: now.subtract(const Duration(days: 3)),
-      ),
-      Transaction(
-        id: '5',
-        title: 'Netflix Subscription',
-        amount: 186000,
-        type: TransactionType.expense,
-        category: TransactionCategory.entertainment,
-        date: now.subtract(const Duration(days: 5)),
-      ),
-      Transaction(
-        id: '6',
-        title: 'Listrik',
-        amount: 350000,
-        type: TransactionType.expense,
-        category: TransactionCategory.bills,
-        date: now.subtract(const Duration(days: 7)),
-      ),
-      Transaction(
-        id: '7',
-        title: 'Freelance Project',
-        amount: 2500000,
-        type: TransactionType.income,
-        category: TransactionCategory.investment,
-        date: now.subtract(const Duration(days: 10)),
-      ),
-      Transaction(
-        id: '8',
-        title: 'Kopi & Snack',
-        amount: 75000,
-        type: TransactionType.expense,
-        category: TransactionCategory.food,
-        date: now.subtract(const Duration(days: 1)),
-      ),
-      Transaction(
-        id: '9',
-        title: 'Bensin Motor',
-        amount: 50000,
-        type: TransactionType.expense,
-        category: TransactionCategory.transport,
-        date: now.subtract(const Duration(hours: 5)),
-      ),
-      Transaction(
-        id: '10',
-        title: 'Belanja Online',
-        amount: 350000,
-        type: TransactionType.expense,
-        category: TransactionCategory.shopping,
-        date: now.subtract(const Duration(days: 2)),
-      ),
-      Transaction(
-        id: '11',
-        title: 'Bioskop',
-        amount: 120000,
-        type: TransactionType.expense,
-        category: TransactionCategory.entertainment,
-        date: now.subtract(const Duration(days: 6)),
-      ),
-      Transaction(
-        id: '12',
-        title: 'Internet',
-        amount: 300000,
-        type: TransactionType.expense,
-        category: TransactionCategory.bills,
-        date: now.subtract(const Duration(days: 8)),
-      ),
-    ]);
-  }
-
-  /// Menambah transaksi baru
-  void addTransaction(Transaction transaction) {
-    _transactions.insert(0, transaction); // Insert di awal list
-    notifyListeners(); // Notify UI untuk update
-  }
-
-  /// Menghapus transaksi berdasarkan ID
-  void deleteTransaction(String id) {
-    _transactions.removeWhere((tx) => tx.id == id);
+  // Load semua transaksi dari Firestore
+  Future<void> _loadTransactions() async {
+    _isLoading = true;
     notifyListeners();
+
+    try {
+      final snapshot = await _firestore
+          .collection('transactions')
+          .orderBy('date', descending: true)
+          .get();
+
+      _transactions = snapshot.docs
+          .map((doc) => TransactionModel.fromFirestore(doc))
+          .toList();
+    } catch (e) {
+      debugPrint('Error loading transactions: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
-  /// Mendapatkan total saldo
+  // Tambah transaksi baru
+  Future<void> addTransaction(TransactionModel transaction) async {
+    try {
+      await _firestore.collection('transactions').add(transaction.toFirestore());
+      await _loadTransactions();
+    } catch (e) {
+      debugPrint('Error adding transaction: $e');
+    }
+  }
+
+  // Update transaksi
+  Future<void> updateTransaction(TransactionModel transaction) async {
+    try {
+      await _firestore
+          .collection('transactions')
+          .doc(transaction.id)
+          .update(transaction.toFirestore());
+      await _loadTransactions();
+    } catch (e) {
+      debugPrint('Error updating transaction: $e');
+    }
+  }
+
+  // Hapus transaksi
+  Future<void> deleteTransaction(String id) async {
+    try {
+      await _firestore.collection('transactions').doc(id).delete();
+      await _loadTransactions();
+    } catch (e) {
+      debugPrint('Error deleting transaction: $e');
+    }
+  }
+
+  // Total saldo
   double get totalBalance {
     double balance = 0;
     for (var tx in _transactions) {
@@ -142,7 +82,7 @@ class TransactionProvider extends ChangeNotifier {
     return balance;
   }
 
-  /// Mendapatkan total pemasukan hari ini
+  // Total pemasukan hari ini
   double get todayIncome {
     final today = DateTime.now();
     return _transactions
@@ -154,7 +94,7 @@ class TransactionProvider extends ChangeNotifier {
         .fold(0, (sum, tx) => sum + tx.amount);
   }
 
-  /// Mendapatkan total pengeluaran hari ini
+  // Total pengeluaran hari ini
   double get todayExpense {
     final today = DateTime.now();
     return _transactions
@@ -166,41 +106,41 @@ class TransactionProvider extends ChangeNotifier {
         .fold(0, (sum, tx) => sum + tx.amount);
   }
 
-  /// Mendapatkan 10 transaksi terbaru
-  List<Transaction> get recentTransactions {
-    final sorted = List<Transaction>.from(_transactions)
+  // 10 transaksi terbaru
+  List<TransactionModel> get recentTransactions {
+    final sorted = List<TransactionModel>.from(_transactions)
       ..sort((a, b) => b.date.compareTo(a.date));
     return sorted.take(10).toList();
   }
 
-  /// Filter transaksi berdasarkan tipe
-  List<Transaction> getTransactionsByType(TransactionType? type) {
+  // Filter berdasarkan tipe
+  List<TransactionModel> getTransactionsByType(TransactionType? type) {
     if (type == null) return transactions;
     return _transactions.where((tx) => tx.type == type).toList();
   }
 
-  /// Mendapatkan transaksi berdasarkan bulan dan tahun
-  List<Transaction> getTransactionsByMonth(int month, int year) {
+  // Filter berdasarkan bulan dan tahun
+  List<TransactionModel> getTransactionsByMonth(int month, int year) {
     return _transactions
         .where((tx) => tx.date.month == month && tx.date.year == year)
         .toList();
   }
 
-  /// Mendapatkan total pemasukan per bulan
+  // Total pemasukan per bulan
   double getMonthlyIncome(int month, int year) {
     return getTransactionsByMonth(month, year)
         .where((tx) => tx.type == TransactionType.income)
         .fold(0, (sum, tx) => sum + tx.amount);
   }
 
-  /// Mendapatkan total pengeluaran per bulan
+  // Total pengeluaran per bulan
   double getMonthlyExpense(int month, int year) {
     return getTransactionsByMonth(month, year)
         .where((tx) => tx.type == TransactionType.expense)
         .fold(0, (sum, tx) => sum + tx.amount);
   }
 
-  /// Mendapatkan breakdown per kategori untuk bulan tertentu
+  // Breakdown per kategori
   Map<TransactionCategory, double> getCategoryBreakdown(int month, int year) {
     final monthlyTransactions = getTransactionsByMonth(month, year);
     final Map<TransactionCategory, double> breakdown = {};
@@ -214,7 +154,7 @@ class TransactionProvider extends ChangeNotifier {
     return breakdown;
   }
 
-  /// Mendapatkan data untuk sparkline chart (7 hari terakhir)
+  // Data expense 7 hari terakhir
   List<double> getWeeklyExpenseData() {
     final now = DateTime.now();
     final List<double> data = [];
@@ -234,7 +174,7 @@ class TransactionProvider extends ChangeNotifier {
     return data;
   }
 
-  /// Mendapatkan data income untuk sparkline chart (7 hari terakhir)
+  // Data income 7 hari terakhir
   List<double> getWeeklyIncomeData() {
     final now = DateTime.now();
     final List<double> data = [];
@@ -254,12 +194,8 @@ class TransactionProvider extends ChangeNotifier {
     return data;
   }
 
-  /// Update existing transaction
-  void updateTransaction(Transaction updatedTransaction) {
-    final index = _transactions.indexWhere((tx) => tx.id == updatedTransaction.id);
-    if (index != -1) {
-      _transactions[index] = updatedTransaction;
-      notifyListeners();
-    }
+  // Refresh data
+  Future<void> refreshTransactions() async {
+    await _loadTransactions();
   }
 }

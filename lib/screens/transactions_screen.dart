@@ -6,7 +6,6 @@ import '../models/transaction.dart';
 import '../widgets/add_transaction_sheet.dart';
 import '../widgets/glass_card.dart';
 
-/// Halaman Transaksi - menampilkan semua transaksi dengan filter
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
 
@@ -15,18 +14,16 @@ class TransactionsScreen extends StatefulWidget {
 }
 
 class _TransactionsScreenState extends State<TransactionsScreen> {
-  TransactionType? _selectedType; // Filter tipe transaksi
-  String _searchQuery = ''; // Query pencarian
-  int _selectedMonth = DateTime.now().month; // Filter bulan
+  TransactionType? _selectedType;
+  String _searchQuery = '';
+  int _selectedMonth = DateTime.now().month;
 
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<TransactionProvider>(context);
     
-    // Filter transaksi berdasarkan tipe dan pencarian
-    List<Transaction> filteredTransactions = provider.getTransactionsByType(_selectedType);
+    List<TransactionModel> filteredTransactions = provider.getTransactionsByType(_selectedType);
     
-    // Filter berdasarkan bulan
     filteredTransactions = filteredTransactions
         .where((tx) => tx.date.month == _selectedMonth)
         .toList();
@@ -38,7 +35,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       }).toList();
     }
 
-    // Urutkan berdasarkan tanggal terbaru
     filteredTransactions = List.from(filteredTransactions)
       ..sort((a, b) => b.date.compareTo(a.date));
 
@@ -58,7 +54,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              // Header 
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
                 child: Row(
@@ -92,7 +87,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 ),
               ),
 
-              // Search Bar
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: GlassCard(
@@ -128,7 +122,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 ),
               ),
 
-              // Filter Bulan
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
                 child: GlassCard(
@@ -164,7 +157,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 ),
               ),
 
-              // Filter Chips
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
                 child: Row(
@@ -204,7 +196,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 ),
               ),
 
-              // List Transaksi
               Expanded(
                 child: filteredTransactions.isEmpty
                     ? Center(
@@ -248,7 +239,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     );
   }
 
-  /// Widget untuk filter chip
   Widget _buildFilterChip({
     required String label,
     required bool isSelected,
@@ -292,8 +282,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     );
   }
 
-  /// Widget untuk card transaksi
-  Widget _buildTransactionCard(Transaction tx, BuildContext context) {
+  Widget _buildTransactionCard(TransactionModel tx, BuildContext context) {
     final isIncome = tx.type == TransactionType.income;
 
     return Dismissible(
@@ -330,7 +319,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       },
       child: GestureDetector(
         onTap: () {
-          // Open edit sheet
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
@@ -343,7 +331,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                // Icon kategori
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -360,7 +347,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 ),
                 const SizedBox(width: 16),
 
-                // Info transaksi
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -386,7 +372,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   ),
                 ),
 
-                // Nominal dan tanggal
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [

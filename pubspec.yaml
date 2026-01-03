@@ -28,6 +28,10 @@ dependencies:
   # Routing
   go_router: ^14.1.0
 
+  # Firebase
+  firebase_core: ^2.24.0
+  cloud_firestore: ^4.13.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

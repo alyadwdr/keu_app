@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "850004236376",
+    "project_id": "keuapp-dfac5",
+    "storage_bucket": "keuapp-dfac5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:850004236376:android:340896427e0b20b84f122d",
+        "android_client_info": {
+          "package_name": "com.example.keu_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAn_AV02EN9Wb8Vm5v5PVjEwaD4sZuwYFM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
