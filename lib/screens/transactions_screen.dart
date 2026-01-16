@@ -17,6 +17,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   TransactionType? _selectedType;
   String _searchQuery = '';
   int _selectedMonth = DateTime.now().month;
+  
+  // Track dismissed items to hide them immediately
+  final Set<String> _dismissedIds = {};
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +37,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                tx.category.label.toLowerCase().contains(_searchQuery.toLowerCase());
       }).toList();
     }
+
+    // Filter out dismissed items
+    filteredTransactions = filteredTransactions
+        .where((tx) => !_dismissedIds.contains(tx.id))
+        .toList();
 
     filteredTransactions = List.from(filteredTransactions)
       ..sort((a, b) => b.date.compareTo(a.date));
@@ -286,8 +294,54 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     final isIncome = tx.type == TransactionType.income;
 
     return Dismissible(
-      key: Key(tx.id),
+      key: ValueKey(tx.id), // Gunakan ValueKey untuk stabilitas
       direction: DismissDirection.endToStart,
+      confirmDismiss: (direction) async {
+        // Konfirmasi dulu sebelum hapus
+        return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text(
+              'Delete Transaction',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 20,
+              ),
+            ),
+            content: Text(
+              'Are you sure you want to delete "${tx.title}"?',
+              style: const TextStyle(fontSize: 15),
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFFE57373),
+                ),
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
       background: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.only(right: 20),
@@ -302,20 +356,52 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           size: 28,
         ),
       ),
-      onDismissed: (direction) {
-        Provider.of<TransactionProvider>(context, listen: false)
+      onDismissed: (direction) async {
+        // Simpan data transaksi untuk undo
+        final deletedTx = tx;
+        
+        // Tandai sebagai dismissed SEBELUM delete - ini penting!
+        setState(() {
+          _dismissedIds.add(tx.id);
+        });
+        
+        // Hapus dari provider
+        await Provider.of<TransactionProvider>(context, listen: false)
             .deleteTransaction(tx.id);
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${tx.title} deleted'),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
+        // Tampilkan snackbar dengan opsi undo
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${deletedTx.title} deleted'),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              backgroundColor: const Color(0xFFE57373),
+              action: SnackBarAction(
+                label: 'UNDO',
+                textColor: Colors.white,
+                onPressed: () {
+                  // Restore transaksi yang dihapus
+                  setState(() {
+                    _dismissedIds.remove(deletedTx.id);
+                  });
+                  Provider.of<TransactionProvider>(context, listen: false)
+                      .addTransaction(deletedTx);
+                },
+              ),
+              duration: const Duration(seconds: 3),
             ),
-            backgroundColor: const Color(0xFFE57373),
-          ),
-        );
+          ).closed.then((reason) {
+            // Hapus dari dismissed list setelah snackbar hilang
+            if (reason != SnackBarClosedReason.action) {
+              setState(() {
+                _dismissedIds.remove(deletedTx.id);
+              });
+            }
+          });
+        }
       },
       child: GestureDetector(
         onTap: () {
